@@ -1,0 +1,288 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  name         String
+  role         UserRole       @default(PIC_BRAND)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  ownedBrands  Brand[]        @relation("UserOwnedBrands")
+  brandAccess  UserBrandAccess[]
+
+  aiAnalyses   AIAnalysis[]
+  tasksCreated Task[]         @relation("TaskCreator")
+  tasksAssigned Task[]        @relation("TaskAssignee")
+
+  @@map("users")
+}
+
+model Brand {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  logoUrl     String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  createdById String
+  createdBy   User         @relation("UserOwnedBrands", fields: [createdById], references: [id], onDelete: Cascade)
+
+  userAccess      UserBrandAccess[]
+  contents        Content[]
+  products        Product[]
+  creators        Creator[]
+  aiAnalyses      AIAnalysis[]
+  tasks           Task[]
+  aiConfigs       AIConfig[]
+  hashtags        Hashtag[]
+
+  @@map("brands")
+}
+
+model UserBrandAccess {
+  id        String @id @default(cuid())
+  userId    String
+  brandId   String
+  assignedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, brandId])
+  @@map("user_brand_access")
+}
+
+model Content {
+  id             String           @id @default(cuid())
+  brandId        String
+  platform       Platform
+  contentType    ContentType
+  nativePostId   String           @unique
+  permalink      String           @unique
+  caption        String?
+  durationSec    Int?
+  publishedAt    DateTime?
+  thumbnailUrl   String?
+  hookType       String?
+  ctaType        String?
+  visualTags     String[]
+  audioName      String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  brand          Brand            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  metrics        Metric[]
+  products       ContentProduct[]
+  creators       ContentCreator[]
+  hashtags       ContentHashtag[]
+
+  aiAnalyses     AIAnalysis[]
+
+  @@map("contents")
+}
+
+model Metric {
+  id             String  @id @default(cuid())
+  contentId      String
+  metricDate     DateTime
+  views          BigInt? @default(0)
+  likes          BigInt? @default(0)
+  shares         BigInt? @default(0)
+  comments       BigInt? @default(0)
+  saves          BigInt? @default(0)
+  reach          BigInt? @default(0)
+  follows        BigInt? @default(0)
+  engagementRate Float? 
+
+  content        Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, metricDate])
+  @@map("metrics")
+}
+
+model Product {
+  id          String           @id @default(cuid())
+  brandId     String
+  name        String
+  sku         String?
+  category    String?
+  createdAt   DateTime         @default(now())
+
+  brand       Brand            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  contentProducts ContentProduct[]
+
+  @@map("products")
+}
+
+model ContentProduct {
+  id        String @id @default(cuid())
+  contentId String
+  productId String
+
+  content  Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  product  Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, productId])
+  @@map("content_products")
+}
+
+model Creator {
+  id          String           @id @default(cuid())
+  brandId     String
+  handle      String           @unique
+  name        String?
+  category    String?          // Nano, Micro, Macro, Affiliate
+  notes       String?
+  createdAt   DateTime         @default(now())
+
+  brand       Brand            @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  contentCreators ContentCreator[]
+
+  @@map("creators")
+}
+
+model ContentCreator {
+  id           String         @id @default(cuid())
+  contentId    String
+  creatorId    String
+  relation     CreatorRelation @default(UGC)
+
+  content      Content        @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  creator      Creator        @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, creatorId])
+  @@map("content_creators")
+}
+
+model Hashtag {
+  id        String           @id @default(cuid())
+  brandId   String
+  tag       String           @unique
+  createdAt DateTime         @default(now())
+
+  brand         Brand         @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  contentHashtags ContentHashtag[]
+
+  @@map("hashtags")
+}
+
+model ContentHashtag {
+  id         String @id @default(cuid())
+  contentId  String
+  hashtagId  String
+
+  content   Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+
+  @@unique([contentId, hashtagId])
+  @@map("content_hashtags")
+}
+
+model AIAnalysis {
+  id            String      @id @default(cuid())
+  brandId       String
+  userId        String
+  analysisType  AnalysisType
+  contentId     String?
+  title         String
+  inputPayload  Json
+  outputPayload Json
+  summaryText   String?
+  providerUsed  String
+  modelUsed     String
+  createdAt     DateTime    @default(now())
+
+  brand         Brand       @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id])
+  content       Content?    @relation(fields: [contentId], references: [id])
+  relatedTasks  Task[]
+
+  @@map("ai_analyses")
+}
+
+model Task {
+  id              String     @id @default(cuid())
+  brandId         String
+  title           String
+  description     String
+  status          TaskStatus @default(TODO)
+  priority        String?
+  assignedToId    String?
+  createdById     String
+  dueDate         DateTime?
+  relatedAnalysisId String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  brand           Brand      @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdBy       User       @relation("TaskCreator", fields: [createdById], references: [id])
+  assignedTo      User?      @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  relatedAnalysis AIAnalysis? @relation(fields: [relatedAnalysisId], references: [id])
+
+  @@map("tasks")
+}
+
+model AIConfig {
+  id      String @id @default(cuid())
+  brandId String
+  provider String // GEMINI, BLACKBOX_AI, OPENAI
+  apiKey  String // hashed in app
+  model   String
+  isActive Boolean @default(false)
+
+  brand   Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, provider])
+  @@map("ai_configs")
+}
+
+// Enums
+enum UserRole {
+  OWNER
+  PIC_BRAND
+}
+
+enum Platform {
+  INSTAGRAM
+  TIKTOK
+}
+
+enum ContentType {
+  REEL
+  CAROUSEL
+  IMAGE
+  VIDEO
+}
+
+enum CreatorRelation {
+  BRAND_OWNED
+  UGC
+  AFFILIATE
+  PAID_PARTNERSHIP
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum AnalysisType {
+  CONTENT_RANKING
+  WEEKLY_REPORT
+  PRE_POST_PREDICTION
+  CAPTION_OPTIMIZE
+  HASHTAG_ANALYSIS
+  AI_CHAT
+}
