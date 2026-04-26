@@ -29,6 +29,7 @@ import contentRoutes from './routes/contents';
 import taskRoutes from './routes/tasks';
 import aiRoutes from './routes/ai';
 import uploadRoutes from './routes/upload';
+import analyticsRoutes from './routes/analytics';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/brands', brandRoutes);
@@ -36,6 +37,7 @@ app.use('/api/contents', contentRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // 404 handler
 app.use('*', (req: Request, res: Response) => {

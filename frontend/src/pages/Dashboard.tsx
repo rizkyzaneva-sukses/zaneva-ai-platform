@@ -60,7 +60,7 @@ export default function Dashboard() {
         {[{ l: 'To Do', v: stats.todo, c: 'bg-blue-500' }, { l: 'In Progress', v: stats.inProgress, c: 'bg-amber-500' }, { l: 'Done', v: stats.done, c: 'bg-emerald-500' }].map(x => (
           <div key={x.l} className="mb-3">
             <div className="flex justify-between text-sm mb-1"><span className="text-muted-foreground">{x.l}</span><span className="font-medium">{x.v}</span></div>
-            <div className="h-2 rounded-full bg-white/5 overflow-hidden"><div className={`h-full rounded-full ${x.c} transition-all duration-1000`} style={{ width: stats.totalTasks > 0 ? `${(x.v / stats.totalTasks) * 100}%` : '0%' }} /></div>
+            <div className="h-2 rounded-full bg-card overflow-hidden"><div className={`h-full rounded-full ${x.c} transition-all duration-1000`} style={{ width: stats.totalTasks > 0 ? `${(x.v / stats.totalTasks) * 100}%` : '0%' }} /></div>
           </div>
         ))}
       </div>

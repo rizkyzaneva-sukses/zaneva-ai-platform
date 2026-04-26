@@ -38,7 +38,7 @@ export default function Contents() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-border">
                 <th className="text-left p-4 font-medium text-muted-foreground">Platform</th>
                 <th className="text-left p-4 font-medium text-muted-foreground">Tipe</th>
                 <th className="text-left p-4 font-medium text-muted-foreground">Caption</th>
@@ -53,7 +53,7 @@ export default function Contents() {
               {contents.map((c, i) => {
                 const m = c.metrics?.[0] || {};
                 return (
-                  <tr key={c.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <tr key={c.id} className="border-b border-white/5 hover:bg-card transition-colors">
                     <td className="p-4"><span className={`px-2 py-1 rounded-lg text-xs font-medium ${c.platform === 'INSTAGRAM' ? 'bg-pink-500/10 text-pink-400' : 'bg-cyan-500/10 text-cyan-400'}`}>{c.platform}</span></td>
                     <td className="p-4 text-muted-foreground">{c.contentType}</td>
                     <td className="p-4 max-w-[200px] truncate text-muted-foreground">{c.caption || '-'}</td>
@@ -75,9 +75,9 @@ export default function Contents() {
 
       {total > 20 && (
         <div className="flex justify-center gap-2">
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-30 transition-all text-sm">← Prev</button>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-4 py-2 rounded-xl bg-card border border-border hover:bg-muted/50 disabled:opacity-30 transition-all text-sm">← Prev</button>
           <span className="px-4 py-2 text-sm text-muted-foreground">Hal {page}</span>
-          <button onClick={() => setPage(p => p + 1)} disabled={contents.length < 20} className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-30 transition-all text-sm">Next →</button>
+          <button onClick={() => setPage(p => p + 1)} disabled={contents.length < 20} className="px-4 py-2 rounded-xl bg-card border border-border hover:bg-muted/50 disabled:opacity-30 transition-all text-sm">Next →</button>
         </div>
       )}
     </div>

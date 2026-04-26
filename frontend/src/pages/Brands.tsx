@@ -45,7 +45,7 @@ export default function Brands() {
           <p className="text-muted-foreground text-sm">Kelola brand yang terdaftar di platform.</p>
         </div>
         {user?.role === 'OWNER' && (
-          <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-xl gradient-primary text-white text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-purple-500/20">
+          <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-xl gradient-primary text-foreground text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-purple-500/20">
             {showForm ? 'Batal' : '+ Tambah Brand'}
           </button>
         )}
@@ -53,9 +53,9 @@ export default function Brands() {
 
       {showForm && (
         <form onSubmit={handleCreate} className="glass-card p-6 space-y-4 animate-slide-up">
-          <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Nama Brand" required className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:ring-2 focus:ring-purple-500/50 focus:outline-none transition-all" />
-          <input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Deskripsi (opsional)" className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:ring-2 focus:ring-purple-500/50 focus:outline-none transition-all" />
-          <button type="submit" disabled={saving} className="px-6 py-2 rounded-xl gradient-primary text-white font-medium disabled:opacity-50 transition-all">{saving ? 'Menyimpan...' : 'Simpan'}</button>
+          <input value={form.name} onChange={e => setForm({...form, name: e.target.value})} placeholder="Nama Brand" required className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:ring-2 focus:ring-purple-500/50 focus:outline-none transition-all" />
+          <input value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Deskripsi (opsional)" className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:ring-2 focus:ring-purple-500/50 focus:outline-none transition-all" />
+          <button type="submit" disabled={saving} className="px-6 py-2 rounded-xl gradient-primary text-foreground font-medium disabled:opacity-50 transition-all">{saving ? 'Menyimpan...' : 'Simpan'}</button>
         </form>
       )}
 

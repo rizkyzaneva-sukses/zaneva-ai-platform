@@ -6,6 +6,11 @@ import Brands from '@/pages/Brands'
 import Contents from '@/pages/Contents'
 import Tasks from '@/pages/Tasks'
 import Upload from '@/pages/Upload'
+import AI from '@/pages/AI'
+import Products from '@/pages/Products'
+import Creators from '@/pages/Creators'
+import Reports from '@/pages/Reports'
+import Guide from '@/pages/Guide'
 import Layout from '@/components/Layout'
 import { useAuthStore } from '@/stores/auth'
 
@@ -30,6 +35,11 @@ function App() {
       <Route path="/contents" element={<ProtectedRoute><Contents /></ProtectedRoute>} />
       <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
       <Route path="/upload" element={<ProtectedRoute><Upload /></ProtectedRoute>} />
+      <Route path="/ai" element={<ProtectedRoute><AI /></ProtectedRoute>} />
+      <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+      <Route path="/creators" element={<ProtectedRoute><Creators /></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+      <Route path="/guide" element={<ProtectedRoute><Guide /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

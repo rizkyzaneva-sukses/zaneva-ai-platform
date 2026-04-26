@@ -4,13 +4,21 @@ import { AuthRequest } from '../middlewares/auth';
 
 export const getContents = async (req: AuthRequest, res: Response) => {
   try {
-    const { brandId, platform, page = '1', limit = '20' } = req.query;
+    const { brandId, platform, page = '1', limit = '20', creatorRelation, sort = 'reach', sortDir = 'desc' } = req.query;
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
 
     const where: any = {};
     if (brandId) where.brandId = brandId;
     if (platform) where.platform = platform;
+    
+    if (creatorRelation) {
+      where.creators = {
+        some: {
+          relation: creatorRelation
+        }
+      };
+    }
 
     // Filter by accessible brands
     if (req.user!.role !== 'OWNER') {
@@ -25,12 +33,28 @@ export const getContents = async (req: AuthRequest, res: Response) => {
           metrics: { orderBy: { metricDate: 'desc' }, take: 1 },
           _count: { select: { products: true, creators: true } }
         },
-        orderBy: { publishedAt: 'desc' },
+        orderBy: sort === 'publishedAt' ? { publishedAt: sortDir as any } : undefined,
         skip: (pageNum - 1) * limitNum,
         take: limitNum
       }),
       prisma.content.count({ where })
     ]);
+
+    // Apply manual sorting by metric if needed
+    if (sort !== 'publishedAt') {
+      contents.sort((a, b) => {
+        const metricA = a.metrics[0];
+        const metricB = b.metrics[0];
+        if (!metricA && !metricB) return 0;
+        if (!metricA) return 1;
+        if (!metricB) return -1;
+        
+        const valA = Number((metricA as any)[sort as string] || 0);
+        const valB = Number((metricB as any)[sort as string] || 0);
+        
+        return sortDir === 'desc' ? valB - valA : valA - valB;
+      });
+    }
 
     res.json({
       data: contents,

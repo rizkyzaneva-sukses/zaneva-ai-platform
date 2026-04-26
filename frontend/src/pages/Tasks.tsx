@@ -44,25 +44,25 @@ export default function Tasks() {
           <h1 className="text-2xl font-bold">Tasks</h1>
           <p className="text-muted-foreground text-sm">Kanban board untuk manajemen task.</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-xl gradient-primary text-white text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-purple-500/20">
+        <button onClick={() => setShowForm(!showForm)} className="px-4 py-2 rounded-xl gradient-primary text-foreground text-sm font-medium hover:opacity-90 transition-all shadow-lg shadow-purple-500/20">
           {showForm ? 'Batal' : '+ Tambah Task'}
         </button>
       </div>
 
       {showForm && (
         <form onSubmit={handleCreate} className="glass-card p-6 space-y-4 animate-slide-up">
-          <select value={form.brandId} onChange={e => setForm({...form, brandId: e.target.value})} required className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:ring-2 focus:ring-purple-500/50 focus:outline-none">
+          <select value={form.brandId} onChange={e => setForm({...form, brandId: e.target.value})} required className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:ring-2 focus:ring-purple-500/50 focus:outline-none">
             <option value="">Pilih Brand</option>
             {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
-          <input value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="Judul Task" required className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:ring-2 focus:ring-purple-500/50 focus:outline-none" />
-          <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Deskripsi" required rows={3} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:ring-2 focus:ring-purple-500/50 focus:outline-none resize-none" />
-          <select value={form.priority} onChange={e => setForm({...form, priority: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:ring-2 focus:ring-purple-500/50 focus:outline-none">
+          <input value={form.title} onChange={e => setForm({...form, title: e.target.value})} placeholder="Judul Task" required className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:ring-2 focus:ring-purple-500/50 focus:outline-none" />
+          <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} placeholder="Deskripsi" required rows={3} className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:ring-2 focus:ring-purple-500/50 focus:outline-none resize-none" />
+          <select value={form.priority} onChange={e => setForm({...form, priority: e.target.value})} className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:ring-2 focus:ring-purple-500/50 focus:outline-none">
             <option value="LOW">Low</option>
             <option value="MEDIUM">Medium</option>
             <option value="HIGH">High</option>
           </select>
-          <button type="submit" className="px-6 py-2 rounded-xl gradient-primary text-white font-medium transition-all">Simpan</button>
+          <button type="submit" className="px-6 py-2 rounded-xl gradient-primary text-foreground font-medium transition-all">Simpan</button>
         </form>
       )}
 
@@ -83,7 +83,7 @@ export default function Tasks() {
                   </div>
                   <p className="text-xs text-muted-foreground line-clamp-2">{task.description}</p>
                   <div className="flex items-center gap-1 pt-1">
-                    {col.key !== 'TODO' && <button onClick={() => moveTask(task.id, col.key === 'DONE' ? 'IN_PROGRESS' : 'TODO')} className="text-[10px] px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 transition-all">← Kembali</button>}
+                    {col.key !== 'TODO' && <button onClick={() => moveTask(task.id, col.key === 'DONE' ? 'IN_PROGRESS' : 'TODO')} className="text-[10px] px-2 py-1 rounded-lg bg-card hover:bg-muted/50 transition-all">← Kembali</button>}
                     {col.key !== 'DONE' && <button onClick={() => moveTask(task.id, col.key === 'TODO' ? 'IN_PROGRESS' : 'DONE')} className="text-[10px] px-2 py-1 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-all">Lanjut →</button>}
                     <button onClick={() => deleteTask(task.id)} className="text-[10px] px-2 py-1 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all ml-auto">Hapus</button>
                   </div>

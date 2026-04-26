@@ -15,18 +15,24 @@ export class AIService {
       }
     });
 
-    if (!config) return null;
-
-    switch (config.provider) {
-      case 'GEMINI':
-        return new GeminiProvider(config.apiKey, config.model);
-      case 'OPENAI':
-        return new OpenAIProvider(config.apiKey, config.model);
-      // case 'BLACKBOX_AI':
-      //   return new BlackboxProvider(config.apiKey, config.model);
-      default:
-        return null;
+    if (config) {
+      switch (config.provider) {
+        case 'GEMINI':
+          return new GeminiProvider(config.apiKey, config.model);
+        case 'OPENAI':
+          return new OpenAIProvider(config.apiKey, config.model);
+      }
     }
+
+    // Fallback to env variables if no config found
+    if (process.env.GEMINI_API_KEY) {
+      return new GeminiProvider(process.env.GEMINI_API_KEY, process.env.GEMINI_MODEL || 'gemini-1.5-flash');
+    }
+    if (process.env.OPENAI_API_KEY) {
+      return new OpenAIProvider(process.env.OPENAI_API_KEY, process.env.OPENAI_MODEL || 'gpt-4o');
+    }
+
+    return null;
   }
 
   static async analyze(
@@ -54,15 +60,36 @@ export class AIService {
     });
 
     try {
-      const result = await provider.generateStructured(
-        this.buildAnalysisPrompt(input),
-        {
-          narrative: 'string',
-          reasoning: 'string',
-          actionableTasks: 'array'
-        },
-        { analysisId: analysis.id }
-      );
+      let promptData = '';
+      if (input.contentIds && input.contentIds.length > 0) {
+        const contents = await prisma.content.findMany({
+          where: { id: { in: input.contentIds }, brandId },
+          include: { metrics: true }
+        });
+        promptData = JSON.stringify(contents, null, 2);
+      }
+
+      let result;
+      if (input.analysisType === 'AI_CHAT') {
+        const prompt = `User Message: ${input.message}\nContext Data: ${promptData}`;
+        const rawResponse = await provider.generateText(prompt);
+        result = {
+          narrative: rawResponse,
+          reasoning: 'AI Chat interaction',
+          actionableTasks: []
+        };
+      } else {
+        const prompt = this.buildAnalysisPrompt(input, promptData);
+        result = await provider.generateStructured(
+          prompt,
+          {
+            narrative: 'string',
+            reasoning: 'string',
+            actionableTasks: 'array'
+          },
+          { analysisId: analysis.id }
+        );
+      }
 
       // Update analysis with result
       await prisma.aIAnalysis.update({
@@ -100,9 +127,25 @@ export class AIService {
     }
   }
 
-  private static buildAnalysisPrompt(input: AIAnalysisInput): string {
-    // Specific prompt building based on analysis type
-    const basePrompt = `Lakukan analisis mendalam untuk ${input.analysisType}...`;
-    return basePrompt;
+  private static buildAnalysisPrompt(input: AIAnalysisInput, dataContext: string = ''): string {
+    let basePrompt = '';
+    switch (input.analysisType) {
+      case 'CONTENT_RANKING':
+        basePrompt = `Analisis data performa konten berikut dan berikan insight (Kenapa konten tertentu sukses/gagal, tren apa yang terlihat). Data: ${dataContext}`;
+        break;
+      case 'PRE_POST_PREDICTION':
+        basePrompt = `Berdasarkan draft caption berikut: "${input.draftCaption}" dan deskripsi visual: "${input.visualDesc}", berikan prediksi potensi viral (skor 1-100), alasan, dan 3 actionable tasks untuk memperbaikinya sebelum posting.`;
+        break;
+      case 'CAPTION_OPTIMIZE':
+        basePrompt = `Optimasi draft caption berikut agar lebih menarik (hook yang lebih kuat, CTA yang jelas). Draft: "${input.draftCaption}". Berikan narasi alasan perubahan dan actionable tasks.`;
+        break;
+      case 'WEEKLY_REPORT':
+        basePrompt = `Buatkan laporan naratif performa mingguan berdasarkan data berikut: ${dataContext}`;
+        break;
+      default:
+        basePrompt = `Lakukan analisis mendalam untuk ${input.analysisType}... Data: ${dataContext}`;
+    }
+    
+    return basePrompt + `\nOutput harus berupa JSON dengan struktur { narrative: string, reasoning: string, actionableTasks: string[] }`;
   }
 }

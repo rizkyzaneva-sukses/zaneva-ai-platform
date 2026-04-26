@@ -66,17 +66,18 @@ export const tasksAPI = {
   delete: (id: string) => api.delete(`/tasks/${id}`),
 };
 
-// AI API
-export const aiAPI = {
-  analyze: (data: any) => api.post('/ai/analyze', data),
-  getAll: (params?: any) => api.get('/ai', { params }),
-  getOne: (id: string) => api.get(`/ai/${id}`),
-};
-
 // Upload API
 export const uploadAPI = {
-  csv: (formData: FormData) =>
-    api.post('/upload/csv', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+  uploadCSV: (data: FormData) => api.post('/upload/csv', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+};
+
+export const analyticsAPI = {
+  getCreatorLeaderboard: (params?: { brandId?: string }) => api.get('/analytics/creator-leaderboard', { params }).then(res => res.data),
+  getProductPerformance: (params?: { brandId?: string }) => api.get('/analytics/product-performance', { params }).then(res => res.data),
+};
+
+export const aiAPI = {
+  analyze: (data: any) => api.post('/ai/analyze', data).then(res => res.data),
+  getAnalyses: (params?: any) => api.get('/ai', { params }).then(res => res.data),
+  getOne: (id: string) => api.get(`/ai/${id}`).then(res => res.data),
 };
