@@ -7,12 +7,9 @@ uploads/
 .DS_Store
 Thumbs.db
 
-# Frontend build
+# Frontend build (built inside Docker, tidak perlu di repo)
 frontend/dist/
 frontend/node_modules/
-
-# Prisma
-prisma/migrations/
 
 # IDE
 .vscode/

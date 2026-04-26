@@ -1,39 +1,60 @@
-FROM node:20-alpine AS builder
+# ============================================================
+# Stage 1: Build Frontend (Vite React)
+# ============================================================
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /frontend
+
+COPY frontend/package*.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
+
+# ============================================================
+# Stage 2: Build Backend (TypeScript)
+# ============================================================
+FROM node:20-alpine AS backend-builder
 
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-RUN npm ci --only=production=false
+RUN npm ci
 
-# Copy source
 COPY . .
 
 # Generate Prisma client
 RUN npx prisma generate
 
-# Build
+# Build TypeScript
 RUN npm run build
 
+# ============================================================
+# Stage 3: Production runner
+# ============================================================
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
 # Create non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 appuser
 
-# Copy built app and Prisma client
-COPY --from=builder --chown=nextjs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder /app/package.json ./package.json
+# Copy built backend
+COPY --from=backend-builder --chown=appuser:nodejs /app/dist ./dist
+COPY --from=backend-builder --chown=appuser:nodejs /app/node_modules ./node_modules
+COPY --from=backend-builder --chown=appuser:nodejs /app/prisma ./prisma
+COPY --from=backend-builder --chown=appuser:nodejs /app/package.json ./package.json
 
-USER nextjs
+# Copy built frontend into backend's serving dir
+COPY --from=frontend-builder --chown=appuser:nodejs /frontend/dist ./frontend-dist
+
+USER appuser
 
 EXPOSE 3000
 
 ENV NODE_ENV=production
 ENV PORT=3000
 
-CMD ["npm", "start"]
+# Run migrations then start server
+CMD sh -c "npx prisma migrate deploy && node dist/server.js"

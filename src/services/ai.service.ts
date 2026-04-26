@@ -26,7 +26,7 @@ export class AIService {
 
     // Fallback to env variables if no config found
     if (process.env.GEMINI_API_KEY) {
-      return new GeminiProvider(process.env.GEMINI_API_KEY, process.env.GEMINI_MODEL || 'gemini-1.5-flash');
+      return new GeminiProvider(process.env.GEMINI_API_KEY, process.env.GEMINI_MODEL || 'gemini-2.5-flash');
     }
     if (process.env.OPENAI_API_KEY) {
       return new OpenAIProvider(process.env.OPENAI_API_KEY, process.env.OPENAI_MODEL || 'gpt-4o');
@@ -54,6 +54,7 @@ export class AIService {
         analysisType: input.analysisType,
         title: this.generateAnalysisTitle(input),
         inputPayload: input as any,
+        outputPayload: {},
         providerUsed: provider.getProviderName(),
         modelUsed: provider.getModel()
       }

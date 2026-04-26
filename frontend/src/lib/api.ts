@@ -68,7 +68,8 @@ export const tasksAPI = {
 
 // Upload API
 export const uploadAPI = {
-  uploadCSV: (data: FormData) => api.post('/upload/csv', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  uploadFile: (data: FormData) => api.post('/upload/file', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  clearData: (brandId: string) => api.delete('/upload/clear', { data: { brandId } }),
 };
 
 export const analyticsAPI = {

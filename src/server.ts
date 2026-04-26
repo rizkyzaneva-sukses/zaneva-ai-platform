@@ -2,6 +2,8 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
+import path from 'path';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -11,7 +13,7 @@ export const prisma = new PrismaClient();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL || '*',
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -39,10 +41,20 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
-// 404 handler
-app.use('*', (req: Request, res: Response) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+// Serve static frontend (production)
+const frontendDist = path.join(__dirname, '../frontend-dist');
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  // SPA fallback - semua non-API route serve index.html
+  app.get('*', (req: Request, res: Response) => {
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+} else {
+  // 404 handler (dev mode)
+  app.use('*', (req: Request, res: Response) => {
+    res.status(404).json({ error: 'Route not found' });
+  });
+}
 
 // Error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {

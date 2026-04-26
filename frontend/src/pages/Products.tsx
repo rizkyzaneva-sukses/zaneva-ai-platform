@@ -42,6 +42,14 @@ export default function Products() {
         </select>
       </div>
 
+      {/* Info note */}
+      <div className="flex gap-3 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
+        <span className="text-blue-400 text-lg shrink-0">ℹ️</span>
+        <p className="text-sm text-blue-300/80">
+          Data performa produk diambil dari CSV yang diupload. Pastikan ada kolom <strong className="text-blue-200">Produk</strong> atau <strong className="text-blue-200">Product</strong> di CSV (jika ada lebih dari 1 produk, pisahkan dengan koma atau tanda tambah <code>+</code>, misal: <em>Adrea Black + Goldie Black</em>). App otomatis akan memisahkan menjadi 2 produk.
+        </p>
+      </div>
+
       <div className="glass-card rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">

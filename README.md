@@ -37,7 +37,7 @@ npx prisma db push
 - ✅ Prisma PostgreSQL ORM + full schema (Content, Metrics, Brands, Users, AI Analyses, Tasks)
 - ✅ JWT Auth + RBAC (Owner/PIC_Brand) + Brand isolation middleware
 - ✅ REST API (Auth, Brands, Contents, Tasks, AI, Upload)
-- ✅ CSV upload/parser service (Instagram & TikTok format)
+- ✅ CSV/XLSX upload/parser service (Instagram & TikTok format)
 - ✅ AI Provider adapters (Gemini, OpenAI) with structured output
 - ✅ Content CRUD with pagination + metrics
 - ✅ Task management with Kanban status
@@ -53,7 +53,7 @@ npx prisma db push
 - ✅ Brand management (CRUD)
 - ✅ Content table with metrics display
 - ✅ Kanban task board
-- ✅ CSV upload with drag & drop
+- ✅ CSV/XLSX upload with drag & drop
 - ✅ Zustand state management
 - ✅ Responsive sidebar layout
 - ✅ Smooth animations & transitions
@@ -90,7 +90,7 @@ GET    /api/contents            - List contents (paginated)
 GET    /api/contents/stats      - Content statistics
 GET    /api/contents/:id        - Get content detail
 DELETE /api/contents/:id        - Delete content
-POST   /api/upload/csv          - Upload CSV data
+POST   /api/upload/file         - Upload CSV/XLSX data
 GET    /api/tasks               - List tasks
 POST   /api/tasks               - Create task
 PUT    /api/tasks/:id           - Update task

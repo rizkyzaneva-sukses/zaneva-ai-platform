@@ -42,6 +42,14 @@ export default function Creators() {
         </select>
       </div>
 
+      {/* Info note */}
+      <div className="flex gap-3 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
+        <span className="text-blue-400 text-lg shrink-0">ℹ️</span>
+        <p className="text-sm text-blue-300/80">
+          Leaderboard terisi otomatis dari data CSV. Pastikan kolom <strong className="text-blue-200">Username</strong> (atau <em>Nama pengguna akun</em> untuk Instagram) ada di file CSV yang diupload. Jika kolom tidak ada, data creator tidak akan muncul di sini.
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         {creators.slice(0, 3).map((creator, index) => (
           <div key={creator.id} className={`glass-card p-6 rounded-xl border relative overflow-hidden ${index === 0 ? 'border-yellow-500/30' : index === 1 ? 'border-gray-400/30' : 'border-amber-700/30'}`}>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { aiAPI, brandsAPI } from '@/lib/api';
+import { aiAPI, brandsAPI, tasksAPI } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth';
 
 export default function AI() {
@@ -39,11 +39,41 @@ export default function AI() {
     }
   };
 
+  const handleGenerateTasks = async () => {
+    if (!result?.actionableTasks || result.actionableTasks.length === 0) return;
+    
+    try {
+      setLoading(true);
+      for (const taskDesc of result.actionableTasks) {
+        await tasksAPI.create({
+          brandId,
+          title: 'AI Insight Action',
+          description: taskDesc,
+          priority: 'HIGH'
+        });
+      }
+      alert('Berhasil! Tasks telah ditambahkan ke Kanban Board.');
+    } catch (err) {
+      console.error(err);
+      alert('Gagal membuat tasks.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-foreground">AI Analysis</h1>
         <p className="text-muted-foreground mt-2">Dapatkan insight dan rekomendasi dari Zaneva AI.</p>
+      </div>
+
+      {/* Info note */}
+      <div className="flex gap-3 p-4 rounded-xl bg-blue-500/5 border border-blue-500/20">
+        <span className="text-blue-400 text-lg shrink-0">ℹ️</span>
+        <p className="text-sm text-blue-300/80">
+          Fitur ini menggunakan integrasi Google Gemini Pro. Pastikan <strong className="text-blue-200">GEMINI_API_KEY</strong> sudah disetup dengan benar di backend server. AI akan menganalisa seluruh data konten yang sudah kamu upload di platform ini.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -165,17 +195,37 @@ export default function AI() {
                 </div>
               )}
 
-              {result.actionableTasks && result.actionableTasks.length > 0 && (
+              {Array.isArray(result.actionableTasks) && result.actionableTasks.length > 0 && (
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-primary">Actionable Tasks</h3>
+                  <h3 className="font-semibold text-primary">Actionable Tasks & Suggestions</h3>
                   <ul className="list-disc list-inside space-y-2 text-sm">
                     {result.actionableTasks.map((task: string, i: number) => (
                       <li key={i} className="pl-2">{task}</li>
                     ))}
                   </ul>
-                  <button className="mt-4 px-4 py-2 bg-blue-500/20 text-blue-400 text-sm font-medium rounded hover:bg-blue-500/30 transition">
+                  <button 
+                    onClick={handleGenerateTasks}
+                    disabled={loading}
+                    className="mt-4 px-4 py-2 bg-blue-500/20 text-blue-400 text-sm font-medium rounded hover:bg-blue-500/30 transition disabled:opacity-50"
+                  >
                     + Generate Kanban Tasks
                   </button>
+                </div>
+              )}
+              
+              {/* Fallback if AI returns plain text instead of array */}
+              {result.actionableTasks && !Array.isArray(result.actionableTasks) && (
+                 <div className="space-y-2">
+                  <h3 className="font-semibold text-primary">Actionable Tasks & Suggestions</h3>
+                  <div className="p-4 bg-card rounded-lg text-sm whitespace-pre-wrap leading-relaxed">
+                    {String(result.actionableTasks)}
+                  </div>
+                </div>
+              )}
+
+              {result.error && (
+                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
+                  Oops, AI gagal memformat jawaban. Error: {result.error}
                 </div>
               )}
             </div>

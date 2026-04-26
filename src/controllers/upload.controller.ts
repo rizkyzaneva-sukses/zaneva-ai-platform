@@ -153,43 +153,59 @@ export const uploadFile = async (req: AuthRequest, res: Response) => {
         }
 
         // 3. Product Extraction
-        const knownProducts = ['catalina', 'kyra', 'davira', 'mirae', 'sandrine', 'maiza', 'narsha'];
-        for (const prodName of knownProducts) {
-          if (lowerCaption.includes(prodName)) {
-            // Find or create product
-            const products = await prisma.product.findMany({
-              where: { brandId, name: { equals: prodName, mode: 'insensitive' } }
-            });
-            let product = products[0];
-            if (!product) {
-              product = await prisma.product.create({
-                data: { brandId, name: prodName.charAt(0).toUpperCase() + prodName.slice(1) }
-              });
-            }
-            await prisma.contentProduct.upsert({
-              where: { contentId_productId: { contentId: content.id, productId: product.id } },
-              create: { contentId: content.id, productId: product.id },
-              update: {}
-            });
-          }
+        // Priority: dedicated 'Produk'/'Product' column > fallback to hardcoded caption matching
+        const productColumnValue = mapping.product
+          ? row[mapping.product]
+          : (row['Produk'] || row['Product'] || row['Nama Produk'] || '');
+
+        // Collect product names: split by '+' or ',' and trim whitespace
+        let productNames: string[] = [];
+        if (productColumnValue && productColumnValue.trim()) {
+          productNames = productColumnValue.split(/[+,]/).map((p: string) => p.trim()).filter((p: string) => p.length > 0);
+        } else {
+          // Fallback: match from caption if no dedicated column
+          const knownProducts = ['catalina', 'kyra', 'davira', 'mirae', 'sandrine', 'maiza', 'narsha'];
+          productNames = knownProducts.filter(p => lowerCaption.includes(p))
+            .map(p => p.charAt(0).toUpperCase() + p.slice(1));
         }
 
-        // 4. Creator Detection (Brand vs UGC)
-        const accountHandle = row['Nama pengguna akun'] || row['Username'] || '';
-        if (accountHandle) {
-          // Assume brand official handle is 'zanevahijab' (or we can match brand name)
-          // For now, if handle contains 'zaneva', it's brand owned, else UGC
-          const isBrandOwned = lowerCaption.includes('zaneva') || accountHandle.toLowerCase().includes('zaneva');
+        for (const prodName of productNames) {
+          if (!prodName) continue;
+          const existingProds = await prisma.product.findMany({
+            where: { brandId, name: { equals: prodName, mode: 'insensitive' } }
+          });
+          let product = existingProds[0];
+          if (!product) {
+            product = await prisma.product.create({
+              data: { brandId, name: prodName }
+            });
+          }
+          await prisma.contentProduct.upsert({
+            where: { contentId_productId: { contentId: content.id, productId: product.id } },
+            create: { contentId: content.id, productId: product.id },
+            update: {}
+          });
+        }
+
+        // 4. Creator Detection - read from dedicated 'Username' column or auto-detect
+        const accountHandle = mapping.username
+          ? row[mapping.username]
+          : (row['Username'] || row['Nama pengguna akun'] || row['Account Username'] || '');
+        const displayName = row['Nama akun'] || row['Account Name'] || row['Name'] || accountHandle;
+
+        if (accountHandle && accountHandle.trim()) {
+          const handleClean = accountHandle.trim();
+          const isBrandOwned = lowerCaption.includes('zaneva') || handleClean.toLowerCase().includes('zaneva');
           const relation = isBrandOwned ? 'BRAND_OWNED' : 'UGC';
           
-          let creator = await prisma.creator.findUnique({ where: { handle: accountHandle } });
+          let creator = await prisma.creator.findUnique({ where: { handle: handleClean } });
           if (!creator) {
             creator = await prisma.creator.create({
               data: {
                 brandId,
-                handle: accountHandle,
-                name: row['Nama akun'] || accountHandle,
-                category: isBrandOwned ? 'Brand' : 'Micro' // default
+                handle: handleClean,
+                name: displayName || handleClean,
+                category: isBrandOwned ? 'Brand' : 'Micro'
               }
             });
           }
@@ -256,5 +272,69 @@ export const uploadFile = async (req: AuthRequest, res: Response) => {
   } catch (error: any) {
     console.error('CSV upload error:', error);
     res.status(500).json({ error: error.message || 'CSV upload failed' });
+  }
+};
+
+export const clearBrandData = async (req: AuthRequest, res: Response) => {
+  try {
+    const { brandId } = req.body;
+
+    if (!brandId) {
+      return res.status(400).json({ error: 'brandId is required' });
+    }
+
+    // Only OWNER can clear data
+    if (req.user!.role !== 'OWNER') {
+      return res.status(403).json({ error: 'Only OWNER can clear data' });
+    }
+
+    // Get all content IDs for this brand
+    const contents = await prisma.content.findMany({
+      where: { brandId },
+      select: { id: true }
+    });
+    const contentIds = contents.map(c => c.id);
+
+    let deletedContents = 0;
+    let deletedMetrics = 0;
+    let deletedHashtags = 0;
+    let deletedProducts = 0;
+    let deletedCreators = 0;
+
+    if (contentIds.length > 0) {
+      // Delete all related records first (cascade order)
+      const metricsResult = await prisma.metric.deleteMany({ where: { contentId: { in: contentIds } } });
+      deletedMetrics = metricsResult.count;
+
+      const hashtagsResult = await prisma.contentHashtag.deleteMany({ where: { contentId: { in: contentIds } } });
+      deletedHashtags = hashtagsResult.count;
+
+      const productsResult = await prisma.contentProduct.deleteMany({ where: { contentId: { in: contentIds } } });
+      deletedProducts = productsResult.count;
+
+      const creatorsResult = await prisma.contentCreator.deleteMany({ where: { contentId: { in: contentIds } } });
+      deletedCreators = creatorsResult.count;
+
+      // Delete all AI analyses for these contents
+      await prisma.aIAnalysis.deleteMany({ where: { contentId: { in: contentIds } } });
+
+      // Delete contents
+      const contentsResult = await prisma.content.deleteMany({ where: { brandId } });
+      deletedContents = contentsResult.count;
+    }
+
+    res.json({
+      message: 'Brand data cleared successfully',
+      deleted: {
+        contents: deletedContents,
+        metrics: deletedMetrics,
+        contentHashtags: deletedHashtags,
+        contentProducts: deletedProducts,
+        contentCreators: deletedCreators
+      }
+    });
+  } catch (error: any) {
+    console.error('Clear data error:', error);
+    res.status(500).json({ error: error.message || 'Clear data failed' });
   }
 };

@@ -4,7 +4,7 @@ export class GeminiProvider extends BaseAIProvider {
   private apiKey: string;
   private model: string;
 
-  constructor(apiKey: string, model: string = 'gemini-1.5-flash') {
+  constructor(apiKey: string, model: string = 'gemini-2.5-flash') {
     super();
     this.apiKey = apiKey;
     this.model = model;
