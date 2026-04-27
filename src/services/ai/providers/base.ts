@@ -39,19 +39,45 @@ ${prompt}`;
   }
 
   protected buildStructuredPrompt(prompt: string, schema: any, context?: any): string {
-    return this.buildPrompt(prompt, context) + `\n\nFormat JSON sesuai schema: ${JSON.stringify(schema, null, 2)}`;
+    return this.buildPrompt(prompt, context) + `
+
+PENTING: Balas HANYA dengan raw JSON, tanpa penjelasan tambahan, tanpa markdown, tanpa \`\`\`json wrapper.
+Format JSON yang diharapkan:
+${JSON.stringify(schema, null, 2)}`;
   }
 
   protected parseStructuredResponse(response: string, schema: any): any {
     try {
-      // Simple JSON extraction - improve with regex or libraries in production
-      const jsonMatch = response.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[0]);
+      // 1. Coba strip markdown code block (```json ... ``` atau ``` ... ```)
+      let cleaned = response.trim();
+      const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        cleaned = codeBlockMatch[1].trim();
       }
-      return { error: 'Failed to parse structured response', raw: response };
+
+      // 2. Coba parse langsung
+      try {
+        return JSON.parse(cleaned);
+      } catch {
+        // 3. Fallback: cari blok JSON pertama dengan regex
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+      }
+
+      // 4. Jika semua gagal, kembalikan narrative mentah agar UI tetap bisa tampil
+      return {
+        narrative: response,
+        reasoning: 'AI memberikan respons teks (tidak terstruktur).',
+        actionableTasks: []
+      };
     } catch {
-      return { error: 'JSON parse failed', raw: response };
+      return {
+        narrative: response || 'Terjadi kesalahan saat memproses respons AI.',
+        reasoning: 'Gagal memparse JSON dari AI.',
+        actionableTasks: []
+      };
     }
   }
 
