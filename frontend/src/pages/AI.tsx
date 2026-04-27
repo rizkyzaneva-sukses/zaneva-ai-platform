@@ -179,31 +179,56 @@ export default function AI() {
             </div>
           ) : (
             <div className="space-y-6 text-foreground/90">
-              <div className="space-y-2">
-                <h3 className="font-semibold text-primary">Insight Narrative</h3>
-                <div className="p-4 bg-card rounded-lg text-sm whitespace-pre-wrap leading-relaxed">
-                  {result.narrative}
-                </div>
-              </div>
-
-              {result.reasoning && (
+              {/* Narrative */}
+              {result.narrative && (
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-primary">Reasoning</h3>
+                  <h3 className="font-semibold text-primary">Insight Narrative</h3>
                   <div className="p-4 bg-card rounded-lg text-sm whitespace-pre-wrap leading-relaxed">
-                    {result.reasoning}
+                    {String(result.narrative)}
                   </div>
                 </div>
               )}
 
+              {/* Reasoning */}
+              {result.reasoning && (
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-primary">Reasoning</h3>
+                  <div className="p-4 bg-card rounded-lg text-sm whitespace-pre-wrap leading-relaxed">
+                    {String(result.reasoning)}
+                  </div>
+                </div>
+              )}
+
+              {/* Actionable Tasks — handle string[] atau object[] */}
               {Array.isArray(result.actionableTasks) && result.actionableTasks.length > 0 && (
                 <div className="space-y-2">
                   <h3 className="font-semibold text-primary">Actionable Tasks & Suggestions</h3>
-                  <ul className="list-disc list-inside space-y-2 text-sm">
-                    {result.actionableTasks.map((task: string, i: number) => (
-                      <li key={i} className="pl-2">{task}</li>
-                    ))}
+                  <ul className="space-y-3 text-sm">
+                    {result.actionableTasks.map((task: any, i: number) => {
+                      // Handle object format: {title, description, priority}
+                      if (task && typeof task === 'object') {
+                        return (
+                          <li key={i} className="p-3 bg-card rounded-lg border border-border">
+                            <div className="flex items-start gap-2">
+                              <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-medium mt-0.5 ${
+                                task.priority === 'HIGH' ? 'bg-red-500/20 text-red-400' :
+                                task.priority === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-400' :
+                                'bg-green-500/20 text-green-400'
+                              }`}>{task.priority || 'MEDIUM'}</span>
+                              <div>
+                                {task.title && <p className="font-medium text-foreground">{task.title}</p>}
+                                {task.description && <p className="text-muted-foreground mt-0.5">{task.description}</p>}
+                                {!task.title && !task.description && <p>{JSON.stringify(task)}</p>}
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      }
+                      // Handle string format
+                      return <li key={i} className="pl-2 list-disc list-inside">{String(task)}</li>;
+                    })}
                   </ul>
-                  <button 
+                  <button
                     onClick={handleGenerateTasks}
                     disabled={loading}
                     className="mt-4 px-4 py-2 bg-blue-500/20 text-blue-400 text-sm font-medium rounded hover:bg-blue-500/30 transition disabled:opacity-50"
@@ -212,10 +237,10 @@ export default function AI() {
                   </button>
                 </div>
               )}
-              
-              {/* Fallback if AI returns plain text instead of array */}
+
+              {/* Fallback jika actionableTasks bukan array */}
               {result.actionableTasks && !Array.isArray(result.actionableTasks) && (
-                 <div className="space-y-2">
+                <div className="space-y-2">
                   <h3 className="font-semibold text-primary">Actionable Tasks & Suggestions</h3>
                   <div className="p-4 bg-card rounded-lg text-sm whitespace-pre-wrap leading-relaxed">
                     {String(result.actionableTasks)}
@@ -223,9 +248,17 @@ export default function AI() {
                 </div>
               )}
 
+              {/* Error */}
               {result.error && (
                 <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm">
-                  Oops, AI gagal memformat jawaban. Error: {result.error}
+                  Oops, AI gagal memformat jawaban. Error: {String(result.error)}
+                </div>
+              )}
+
+              {/* Raw fallback jika tidak ada field yang dikenal */}
+              {!result.narrative && !result.reasoning && !result.actionableTasks && !result.error && (
+                <div className="p-4 bg-card rounded-lg text-sm whitespace-pre-wrap leading-relaxed">
+                  {JSON.stringify(result, null, 2)}
                 </div>
               )}
             </div>
