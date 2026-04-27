@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { uploadAPI, brandsAPI, contentsAPI } from '@/lib/api';
 import * as XLSX from 'xlsx';
 
@@ -159,14 +159,14 @@ export default function Upload() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium mb-2 text-muted-foreground">Brand</label>
-            <select value={brandId} onChange={e => { setBrandId(e.target.value); setShowClearConfirm(false); setClearResult(null); }} required className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:ring-2 focus:ring-purple-500/50 focus:outline-none">
+            <select title="Pilih Brand" value={brandId} onChange={e => { setBrandId(e.target.value); setShowClearConfirm(false); setClearResult(null); }} required className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:ring-2 focus:ring-purple-500/50 focus:outline-none">
               <option value="">Pilih Brand</option>
               {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-2 text-muted-foreground">Platform</label>
-            <select value={platform} onChange={e => setPlatform(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:ring-2 focus:ring-purple-500/50 focus:outline-none">
+            <select title="Pilih Platform" value={platform} onChange={e => setPlatform(e.target.value)} className="w-full px-4 py-3 rounded-xl bg-card border border-border focus:ring-2 focus:ring-purple-500/50 focus:outline-none">
               <option value="INSTAGRAM">Instagram</option>
               <option value="TIKTOK">TikTok</option>
             </select>
@@ -237,7 +237,7 @@ export default function Upload() {
           className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${dragOver ? 'border-purple-500 bg-purple-500/5' : 'border-border hover:border-white/20'}`}
           onClick={() => document.getElementById('csv-input')?.click()}
         >
-          <input id="csv-input" type="file" accept=".csv,.xlsx" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
+          <input id="csv-input" type="file" accept=".csv,.xlsx" title="Upload file CSV atau XLSX" aria-label="Upload file CSV atau XLSX" className="hidden" onChange={e => setFile(e.target.files?.[0] || null)} />
           <svg className="w-10 h-10 mx-auto mb-3 text-muted-foreground/50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
           {file ? (
             <p className="text-sm font-medium text-purple-400">{file.name} <span className="text-muted-foreground">({(file.size / 1024).toFixed(1)} KB)</span></p>
@@ -255,6 +255,7 @@ export default function Upload() {
                 <div key={field.key} className="flex flex-col space-y-1">
                   <label className="text-xs text-foreground/80">{field.label}</label>
                   <select
+                    title={`Mapping kolom untuk ${field.label}`}
                     value={mapping[field.key] || ''}
                     onChange={e => setMapping({...mapping, [field.key]: e.target.value})}
                     className="w-full text-xs px-2 py-1.5 rounded-lg bg-muted border border-border focus:ring-1 focus:ring-primary text-foreground"

@@ -56,5 +56,5 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Run migrations then start server
-CMD sh -c "npx prisma migrate deploy && node dist/server.js"
+# Gunakan exec form (JSON array) agar OS signal (SIGTERM) diteruskan dengan benar
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
