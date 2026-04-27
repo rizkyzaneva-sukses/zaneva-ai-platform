@@ -82,6 +82,7 @@ export default function AI() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground/80">Pilih Brand</label>
             <select
+              title="Pilih Brand"
               value={brandId}
               onChange={(e) => setBrandId(e.target.value)}
               className="w-full bg-muted border border-border rounded-lg px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
@@ -96,6 +97,7 @@ export default function AI() {
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground/80">Tipe Analisis</label>
             <select
+              title="Pilih Tipe Analisis"
               value={analysisType}
               onChange={(e) => setAnalysisType(e.target.value)}
               className="w-full bg-muted border border-border rounded-lg px-4 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"

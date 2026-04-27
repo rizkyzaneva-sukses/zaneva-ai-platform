@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { uploadAPI, brandsAPI, contentsAPI } from '@/lib/api';
+import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { uploadAPI, brandsAPI, contentsAPI, aiAPI, tasksAPI } from '@/lib/api';
 import * as XLSX from 'xlsx';
 
 export default function Upload() {
@@ -7,6 +8,7 @@ export default function Upload() {
   const [brandId, setBrandId] = useState('');
   const [platform, setPlatform] = useState('INSTAGRAM');
   const [brands, setBrands] = useState<any[]>([]);
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -17,6 +19,10 @@ export default function Upload() {
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [contentCount, setContentCount] = useState<number | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  // AI auto-analysis state
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiModal, setAiModal] = useState<any>(null);
+  const [toast, setToast] = useState<string>('');
 
   const STANDARD_FIELDS = [
     { key: 'nativePostId', label: 'Post ID' },
@@ -95,6 +101,34 @@ export default function Upload() {
     }
   }, [file, platform]);
 
+  const showToast = useCallback((msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 4000);
+  }, []);
+
+  const downloadAnalysisCSV = (analysis: any, taskList: string[]) => {
+    const rows = [
+      ['Zaneva AI Analysis Report'],
+      ['Tanggal', new Date().toLocaleString('id-ID')],
+      ['Brand', selectedBrand?.name || brandId],
+      [],
+      ['=== INSIGHT NARRATIVE ==='],
+      [analysis.narrative || ''],
+      [],
+      ['=== REASONING ==='],
+      [analysis.reasoning || ''],
+      [],
+      ['=== ACTIONABLE TASKS ==='],
+      ...taskList.map((t, i) => [`${i + 1}.`, t]),
+    ];
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `zaneva-ai-analysis-${Date.now()}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !brandId) return;
@@ -104,14 +138,46 @@ export default function Upload() {
       fd.append('file', file);
       fd.append('brandId', brandId);
       fd.append('platform', platform);
-      if (platform === 'TIKTOK') {
-        fd.append('mapping', JSON.stringify(mapping));
-      }
+      if (platform === 'TIKTOK') fd.append('mapping', JSON.stringify(mapping));
       const { data } = await uploadAPI.uploadFile(fd);
       setResult(data);
-      // Refresh content count
       const r = await contentsAPI.getAll({ brandId, limit: 1 });
       setContentCount(r.data?.total ?? r.data?.length ?? null);
+
+      // === AUTO AI ANALYSIS ===
+      setAiLoading(true);
+      try {
+        const aiResult = await aiAPI.analyze({ brandId, analysisType: 'CONTENT_RANKING' });
+        // Normalize tasks
+        const rawTasks: any[] = Array.isArray(aiResult.actionableTasks) ? aiResult.actionableTasks : [];
+        const taskStrings: string[] = rawTasks.map((t: any) =>
+          typeof t === 'string' ? t : (t.description || t.title || JSON.stringify(t))
+        );
+        // Auto-create tasks in Kanban
+        let createdCount = 0;
+        for (const taskStr of taskStrings) {
+          try {
+            await tasksAPI.create({
+              brandId,
+              title: typeof rawTasks[taskStrings.indexOf(taskStr)] === 'object'
+                ? (rawTasks[taskStrings.indexOf(taskStr)].title || 'AI Insight')
+                : 'AI Insight Action',
+              description: taskStr,
+              priority: typeof rawTasks[taskStrings.indexOf(taskStr)] === 'object'
+                ? (rawTasks[taskStrings.indexOf(taskStr)].priority || 'MEDIUM')
+                : 'MEDIUM',
+              status: 'TODO',
+            });
+            createdCount++;
+          } catch {}
+        }
+        setAiModal({ ...aiResult, taskStrings, createdCount });
+        showToast(`✅ ${createdCount} task AI berhasil ditambahkan ke Kanban!`);
+      } catch {
+        showToast('⚠️ Upload berhasil, tapi AI analysis gagal.');
+      } finally {
+        setAiLoading(false);
+      }
     } catch (err: any) {
       setError(err.response?.data?.error || 'Upload gagal');
     } finally { setLoading(false); }
@@ -141,6 +207,103 @@ export default function Upload() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+      {/* Toast Notification (Opsi C) */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl bg-card border border-purple-500/30 shadow-xl shadow-purple-500/10 animate-slide-up text-sm font-medium text-foreground max-w-sm">
+          <span>{toast}</span>
+          <button onClick={() => setToast('')} className="ml-2 text-muted-foreground hover:text-foreground" title="Tutup notifikasi">✕</button>
+        </div>
+      )}
+
+      {/* AI Loading Overlay */}
+      {aiLoading && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+          <div className="glass-card p-8 max-w-sm w-full mx-4 text-center space-y-4 border border-purple-500/30 shadow-2xl shadow-purple-500/20">
+            <div className="w-16 h-16 mx-auto rounded-2xl gradient-primary flex items-center justify-center shadow-lg shadow-purple-500/30">
+              <svg className="animate-spin w-8 h-8 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+            </div>
+            <div>
+              <h3 className="font-bold text-lg">Zaneva AI Menganalisis...</h3>
+              <p className="text-sm text-muted-foreground mt-1">Sedang membaca data yang baru diupload dan membuat rekomendasi untuk tim kamu.</p>
+            </div>
+              <div className="flex gap-1.5 justify-center">
+                <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce [animation-delay:0s]"/>
+                <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce [animation-delay:0.15s]"/>
+                <div className="w-2 h-2 rounded-full bg-purple-500 animate-bounce [animation-delay:0.3s]"/>
+              </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Result Modal (Opsi A) */}
+      {aiModal && (
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="glass-card w-full max-w-lg max-h-[85vh] overflow-y-auto border border-purple-500/30 shadow-2xl shadow-purple-500/20 space-y-5 p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl gradient-primary flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                </div>
+                <div>
+                  <h2 className="font-bold text-lg">Analisis AI Selesai!</h2>
+                  <p className="text-xs text-muted-foreground">{aiModal.createdCount} task otomatis ditambahkan ke Kanban</p>
+                </div>
+              </div>
+              <button onClick={() => setAiModal(null)} title="Tutup modal" className="p-2 rounded-lg hover:bg-card text-muted-foreground hover:text-foreground transition-all">✕</button>
+            </div>
+
+            {/* Upload Summary */}
+            {result && (
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="p-3 rounded-xl bg-emerald-500/10"><p className="text-xl font-bold text-emerald-400">{result.imported}</p><p className="text-xs text-muted-foreground">Imported</p></div>
+                <div className="p-3 rounded-xl bg-amber-500/10"><p className="text-xl font-bold text-amber-400">{result.skipped}</p><p className="text-xs text-muted-foreground">Skipped</p></div>
+                <div className="p-3 rounded-xl bg-purple-500/10"><p className="text-xl font-bold text-purple-400">{aiModal.createdCount}</p><p className="text-xs text-muted-foreground">Tasks Dibuat</p></div>
+              </div>
+            )}
+
+            {/* Narrative */}
+            {aiModal.narrative && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-purple-400">💡 Insight AI</h3>
+                <div className="p-4 bg-card rounded-xl text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap">{String(aiModal.narrative)}</div>
+              </div>
+            )}
+
+            {/* Tasks */}
+            {aiModal.taskStrings?.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-blue-400">📋 Tasks yang Ditambahkan ke Kanban</h3>
+                <ul className="space-y-2">
+                  {aiModal.taskStrings.map((t: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 p-3 bg-card rounded-xl text-sm">
+                      <span className="text-purple-400 font-bold shrink-0">{i+1}.</span>
+                      <span className="text-foreground">{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => downloadAnalysisCSV(aiModal, aiModal.taskStrings || [])}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm font-medium hover:bg-card transition-all flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Download CSV
+              </button>
+              <button
+                onClick={() => { setAiModal(null); navigate('/tasks'); }}
+                className="flex-1 py-2.5 rounded-xl gradient-primary text-white text-sm font-medium hover:opacity-90 transition-all flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                Lihat Kanban
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div>
         <h1 className="text-2xl font-bold">Upload CSV / XLSX</h1>
         <p className="text-muted-foreground text-sm">Import data konten dari file CSV atau XLSX Instagram/TikTok.</p>
