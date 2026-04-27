@@ -38,6 +38,8 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
   register: (data: { email: string; password: string; name: string; role?: string }) =>
     api.post('/auth/register', data),
+  getUsers: () => api.get('/auth/users'),
+  deleteUser: (id: string) => api.delete(`/auth/users/${id}`),
 };
 
 // Brands API

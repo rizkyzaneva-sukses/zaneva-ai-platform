@@ -11,6 +11,7 @@ import Products from '@/pages/Products'
 import Creators from '@/pages/Creators'
 import Reports from '@/pages/Reports'
 import Guide from '@/pages/Guide'
+import Users from '@/pages/Users'
 import Layout from '@/components/Layout'
 import { useAuthStore } from '@/stores/auth'
 
@@ -40,6 +41,7 @@ function App() {
       <Route path="/creators" element={<ProtectedRoute><Creators /></ProtectedRoute>} />
       <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
       <Route path="/guide" element={<ProtectedRoute><Guide /></ProtectedRoute>} />
+      <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

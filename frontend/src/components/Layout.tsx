@@ -15,6 +15,10 @@ const NAV = [
   { path: '/guide', label: 'Panduan', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg> },
 ];
 
+const OWNER_NAV = [
+  { path: '/users', label: 'Users', icon: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg> },
+];
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
@@ -50,7 +54,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <nav className="flex-1 px-3 space-y-1">
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
           {NAV.map(item => {
             const active = location.pathname === item.path;
             return (
@@ -61,6 +65,23 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+          {user?.role === 'OWNER' && (
+            <>
+              <div className="pt-2 pb-1 px-4">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Admin</p>
+              </div>
+              {OWNER_NAV.map(item => {
+                const active = location.pathname === item.path;
+                return (
+                  <Link key={item.path} to={item.path} onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${active ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'text-muted-foreground hover:text-foreground hover:bg-card'}`}>
+                    {item.icon}
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         <div className="p-4 border-t border-border">
@@ -87,7 +108,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Main */}
       <main className="flex-1 min-h-screen">
         <header className="sticky top-0 z-30 glass border-b border-border px-6 py-4 flex items-center lg:hidden">
-          <button onClick={() => setSidebarOpen(true)} className="p-2 rounded-xl hover:bg-card transition-all">
+          <button onClick={() => setSidebarOpen(true)} title="Buka menu navigasi" aria-label="Buka menu navigasi" className="p-2 rounded-xl hover:bg-card transition-all">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
           </button>
           <h2 className="ml-3 font-bold gradient-text text-sm">Zaneva AI</h2>
