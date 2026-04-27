@@ -16,6 +16,9 @@ RUN npm run build
 # ============================================================
 FROM node:20-alpine AS backend-builder
 
+# Install OpenSSL untuk Prisma engine
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 COPY package*.json ./
@@ -33,6 +36,9 @@ RUN npm run build
 # Stage 3: Production runner
 # ============================================================
 FROM node:20-alpine AS runner
+
+# Install OpenSSL untuk Prisma engine di runtime
+RUN apk add --no-cache openssl
 
 WORKDIR /app
 
