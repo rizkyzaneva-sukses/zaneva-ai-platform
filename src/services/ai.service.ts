@@ -1,6 +1,7 @@
 import { prisma } from '../server';
 import { AIConfig } from '@prisma/client';
-import { AIAnalysisInput, AIAnalysisOutput, AuthRequest } from '../types';
+import { AIAnalysisInput, AIAnalysisOutput } from '../types';
+import { AuthRequest } from '../middlewares/auth';
 import { BaseAIProvider } from './ai/providers/base';
 import { GeminiProvider } from './ai/providers/gemini';
 import { OpenAIProvider } from './ai/providers/openai';

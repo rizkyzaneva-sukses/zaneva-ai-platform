@@ -38,7 +38,7 @@ export class GeminiProvider extends BaseAIProvider {
       throw new Error(`Gemini API error: ${response.status} - ${error}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as any;
     return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   }
 }

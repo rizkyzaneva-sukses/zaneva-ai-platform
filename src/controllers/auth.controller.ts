@@ -109,8 +109,8 @@ export const registerOwner = async (req: AuthRequest, res: Response) => {
       name: user.name,
       role: user.role
     });
-  } catch (error) {
-    if (error.code === 'P2002') {
+  } catch (error: any) {
+    if (error?.code === 'P2002') {
       return res.status(409).json({ error: 'Email already exists' });
     }
     res.status(500).json({ error: 'Registration failed' });

@@ -18,7 +18,7 @@ export const signToken = (payload: {
   };
 
   return jwt.sign(tokenPayload, JWT_SECRET, {
-    expiresIn: JWT_EXPIRES_IN
+    expiresIn: JWT_EXPIRES_IN as any
   });
 };
 
