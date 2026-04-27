@@ -62,5 +62,5 @@ EXPOSE 3000
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Gunakan exec form (JSON array) agar OS signal (SIGTERM) diteruskan dengan benar
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
+# Resolve failed migration (jika ada) lalu jalankan migration + server
+CMD ["sh", "-c", "npx prisma migrate resolve --rolled-back 20240101000000_init 2>/dev/null || true && npx prisma migrate deploy && node dist/server.js"]

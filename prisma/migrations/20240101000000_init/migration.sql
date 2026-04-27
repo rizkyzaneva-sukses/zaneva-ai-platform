@@ -1,4 +1,4 @@
-﻿-- CreateEnum
+-- CreateEnum
 CREATE TYPE "UserRole" AS ENUM ('OWNER', 'PIC_BRAND');
 
 -- CreateEnum
@@ -303,4 +303,3 @@ ALTER TABLE "tasks" ADD CONSTRAINT "tasks_relatedAnalysisId_fkey" FOREIGN KEY ("
 
 -- AddForeignKey
 ALTER TABLE "ai_configs" ADD CONSTRAINT "ai_configs_brandId_fkey" FOREIGN KEY ("brandId") REFERENCES "brands"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
