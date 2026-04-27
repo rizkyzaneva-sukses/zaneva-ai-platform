@@ -11,6 +11,9 @@ Thumbs.db
 frontend/dist/
 frontend/node_modules/
 
+# Monolith static build output (hasil npm run build:monolith)
+frontend-dist/
+
 # IDE
 .vscode/
 .idea/

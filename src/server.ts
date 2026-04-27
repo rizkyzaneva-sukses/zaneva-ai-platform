@@ -12,8 +12,11 @@ const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 export const prisma = new PrismaClient();
 
 // Middleware
+// Di production (monolith) CORS tidak diperlukan karena frontend & backend
+// berjalan di origin yang sama. Di development, izinkan Vite dev server.
+const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: process.env.NODE_ENV === 'production' ? false : allowedOrigin,
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));
@@ -41,19 +44,27 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
-// Serve static frontend (production)
+// -------------------------------------------------------
+// Monolith: Serve static frontend (production build)
+// Di production, frontend di-build ke ./frontend-dist dan
+// Express menjadi satu-satunya server yang berjalan.
+// Di development, frontend dijalankan terpisah via Vite.
+// -------------------------------------------------------
 const frontendDist = path.join(__dirname, '../frontend-dist');
 if (fs.existsSync(frontendDist)) {
-  app.use(express.static(frontendDist));
-  // SPA fallback - semua non-API route serve index.html
+  // Serve aset statis (JS, CSS, images)
+  app.use(express.static(frontendDist, { maxAge: '1d' }));
+  // SPA fallback – semua non-API route kembalikan index.html
   app.get('*', (req: Request, res: Response) => {
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
+  console.log(`📦 Serving frontend from: ${frontendDist}`);
 } else {
-  // 404 handler (dev mode)
+  // Dev mode: frontend berjalan di Vite dev server (port 5173)
   app.use('*', (req: Request, res: Response) => {
-    res.status(404).json({ error: 'Route not found' });
+    res.status(404).json({ error: 'Route not found', hint: 'Run frontend separately with: cd frontend && npm run dev' });
   });
+  console.log('⚡ Dev mode: Frontend served by Vite on http://localhost:5173');
 }
 
 // Error handler

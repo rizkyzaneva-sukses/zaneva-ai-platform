@@ -10,7 +10,6 @@ services:
       POSTGRES_PASSWORD: zanevapass123
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./prisma/migrations:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     healthcheck:
@@ -19,6 +18,12 @@ services:
       timeout: 5s
       retries: 5
 
+  # -------------------------------------------------------
+  # MONOLITH MODE (Production)
+  # Build image dengan: docker-compose build
+  # Jalankan dengan:    docker-compose up -d
+  # Akses di:           http://localhost:3000
+  # -------------------------------------------------------
   app:
     build: .
     restart: unless-stopped
@@ -26,16 +31,14 @@ services:
       - "3000:3000"
     environment:
       DATABASE_URL: "postgresql://zaneva:zanevapass123@postgres:5432/zanevadb?schema=public"
-      NODE_ENV: development
-      JWT_SECRET: "super-secret-dev-key-change-in-prod"
-      FRONTEND_URL: "http://localhost:5173"
-    volumes:
-      - .:/app
-      - /app/node_modules
+      NODE_ENV: production
+      JWT_SECRET: "${JWT_SECRET:-super-secret-change-in-prod}"
+      PORT: "3000"
     depends_on:
       postgres:
         condition: service_healthy
-    command: npm run dev
+    # Dockerfile sudah handle migrate + start otomatis
+    # CMD: npx prisma migrate deploy && node dist/server.js
 
 volumes:
   postgres_data:

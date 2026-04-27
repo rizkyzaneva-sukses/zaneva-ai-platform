@@ -16,6 +16,11 @@ export default defineConfig({
       }
     }
   },
+  build: {
+    // Output ke frontend/dist — lalu disalin ke ../frontend-dist saat build monolith
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
