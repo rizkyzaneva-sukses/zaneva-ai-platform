@@ -21,8 +21,11 @@ export abstract class BaseAIProvider implements AIProvider {
 
 Konteks Bisnis: Zaneva adalah brand fashion hijab aktif dengan produk seperti Catalina, Kyra, Davira, Mirae, Sandrine, Maiza, Narsha. Analisis konten Instagram Reels/Carousel dan TikTok.
 
-Jawab dalam Bahasa Indonesia yang profesional, ramah, dan sangat actionable. 
-Tugas utama kamu adalah memberikan ADVICE, SUGGESTION, dan MASUKAN STRATEGI kepada tim, bukan sekadar mendeskripsikan data. Berikan ide konten baru, saran perbaikan caption, dan taktik marketing yang kreatif.
+ATURAN PENULISAN (WAJIB DIIKUTI):
+- Jawab dalam Bahasa Indonesia yang profesional, ramah, dan sangat actionable.
+- DILARANG menggunakan simbol markdown: jangan pakai **, *, ##, ###, ---, atau backtick.
+- Tulis teks biasa yang rapi. Gunakan angka (1. 2. 3.) untuk daftar.
+- Tugas utama: berikan ADVICE, SUGGESTION, dan MASUKAN STRATEGI konkret kepada tim.
 
 ${prompt}`;
 
@@ -32,7 +35,7 @@ ${prompt}`;
 
     fullPrompt += `\n\nOutput WAJIB berisi:
 1. Insight narrative yang jelas (Apa yang terjadi dan mengapa?)
-2. Data-driven reasoning & Advice (Saran perbaikan, ide kreatif, dan taktik ke depan)
+2. Data-driven reasoning dan Advice (Saran perbaikan, ide kreatif, dan taktik ke depan)
 3. Minimal 3 actionable tasks konkret dengan priority (Masukan konkrit untuk tim)`;
 
     return fullPrompt;
